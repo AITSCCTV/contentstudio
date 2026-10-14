@@ -14,4 +14,4 @@ const drafts=[
 ].map(d=>({...d,demo:true,eventDate:now,expiresAt:d.priority==='TREND'?expires:null}));
 const quote=value=>"'"+String(value).replaceAll("'","''")+"'";
 const sql=drafts.map(d=>`INSERT INTO drafts(id,title,payload,revision,status,created_at,updated_at) VALUES(${quote(d.id)},${quote(d.title)},${quote(JSON.stringify(d))},1,'DRAFT',${quote(now)},${quote(now)}) ON CONFLICT(id) DO NOTHING;`).join('\n');
-const output=path.join(root,'.sites-runtime','demo');fs.mkdirSync(output,{recursive:true});fs.writeFileSync(path.join(output,'seed.sql'),sql);console.log('Prepared 3 demo drafts for the LOCAL database; no API calls or publication.');
+const output=path.join(root,'.sites-runtime','demo');fs.mkdirSync(output,{recursive:true});fs.writeFileSync(path.join(output,'seed.sql'),sql);fs.writeFileSync(path.join(root,'pages','demo-drafts.json'),JSON.stringify(drafts,null,2));console.log('Prepared 3 hypothetical demo drafts; no API calls or publication.');

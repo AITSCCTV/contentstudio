@@ -1,5 +1,7 @@
 export type Language = 'th' | 'en';
 const english: Record<string, string> = {
+ 'GitHub Pages · บันทึกการแก้ไขในเบราว์เซอร์นี้เท่านั้น ยังไม่เชื่อมต่อ n8n และการเผยแพร่':'GitHub Pages · Edits are saved in this browser only. n8n delivery and publishing are not connected yet.',
+ 'บันทึกในเบราว์เซอร์ไม่สำเร็จ':'Could not save in this browser.',
  'โหมดตัวอย่าง · ร่างเหล่านี้ใช้ทดสอบการตรวจทานและบันทึก ไม่ใช่ข่าวปัจจุบัน และไม่สามารถเผยแพร่ได้':'Demo mode · These sample drafts let you test reviewing and saving. They are not current news and cannot be published.',
  'ร่างตัวอย่างไม่สามารถเผยแพร่ได้':'Demo drafts cannot be published.',
  'พร้อมตรวจทาน':'Ready for review', 'กำลังเผยแพร่':'Publishing', 'กำลังเตรียมรูปภาพ':'Preparing images', 'เผยแพร่แล้ว':'Published', 'ตรวจสอบผลการเผยแพร่':'Check publication results', 'เผยแพร่ไม่สำเร็จ':'Publishing failed', 'ต้องตรวจสอบในบัญชี':'Check the social account',
