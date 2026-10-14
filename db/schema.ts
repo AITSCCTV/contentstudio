@@ -1,0 +1,5 @@
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+export const drafts = sqliteTable('drafts', {id:text('id').primaryKey(),title:text('title').notNull(),payload:text('payload').notNull(),revision:integer('revision').notNull().default(1),status:text('status').notNull().default('DRAFT'),createdAt:text('created_at').notNull(),updatedAt:text('updated_at').notNull()});
+export const publications = sqliteTable('publications', {id:text('id').primaryKey(),draftId:text('draft_id').notNull(),channel:text('channel').notNull(),revision:integer('revision').notNull(),status:text('status').notNull(),postId:text('post_id'),postUrl:text('post_url'),containerId:text('container_id'),error:text('error'),startedAt:text('started_at').notNull(),finishedAt:text('finished_at'),approvedBy:text('approved_by').notNull()});
+export const runs = sqliteTable('runs', {id:text('id').primaryKey(),payload:text('payload').notNull(),recordedAt:text('recorded_at').notNull()});
+export const mediaTickets = sqliteTable('media_tickets', {id:text('id').primaryKey(),objectKey:text('object_key').notNull(),expiresAt:integer('expires_at').notNull()});

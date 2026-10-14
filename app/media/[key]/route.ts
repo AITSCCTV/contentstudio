@@ -1,0 +1,2 @@
+import {bucket,json} from '../../../lib/store';
+export async function GET(request:Request,{params}: {params:Promise<{key:string}>}) {const {key}=await params;if(!/^[a-f0-9]{32}\.jpg$/.test(key))return json({},404);const object=await bucket().get(key);if(!object)return json({},404);return new Response(object.body,{headers:{'Content-Type':'image/jpeg','Cache-Control':'private, max-age=3600','X-Content-Type-Options':'nosniff'}});}

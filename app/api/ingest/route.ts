@@ -1,0 +1,9 @@
+import {db,bucket,json,settings} from '../../../lib/store';
+import {validateDraft} from '../../../lib/contracts';
+export async function POST(request:Request){const key=settings().INGEST_TOKEN;if(!key||request.headers.get('authorization')!=='Bearer '+key)return json({error:'Unauthorized'},401);try{
+ const input=(await request.json()) as any;if(input.run){await db().prepare('INSERT INTO runs(id,payload,recorded_at) VALUES(?,?,?) ON CONFLICT(id) DO NOTHING').bind(input.run.id,JSON.stringify(input.run),new Date().toISOString()).run();return json({ok:true});}
+ const d=input.draft;d.images=[];validateDraft(d);const existing=await db().prepare('SELECT id FROM drafts WHERE id=?').bind(d.id).first();if(existing)return json({ok:true,duplicate:true});
+ if(!Array.isArray(input.imageBase64)||!input.imageBase64.length||input.imageBase64.length>10)return json({error:'Images required'},400);
+ for(const b64 of input.imageBase64){if(typeof b64!=='string'||b64.length>11000000)throw new Error();const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));if(bytes[0]!==255||bytes[1]!==216||bytes.length>8000000)throw new Error();const key=crypto.randomUUID().replaceAll('-','')+'.jpg';await bucket().put(key,bytes,{httpMetadata:{contentType:'image/jpeg'}});d.images.push('/media/'+key);}
+ const now=new Date().toISOString();await db().prepare('INSERT INTO drafts(id,title,payload,revision,status,created_at,updated_at) VALUES(?,?,?,1,\'DRAFT\',?,?) ON CONFLICT(id) DO NOTHING').bind(d.id,d.title,JSON.stringify(d),now,now).run();return json({ok:true,id:d.id});
+ }catch{return json({error:'Invalid content package'},400);}}
