@@ -1,12 +1,23 @@
 # Content Studio on Render
 
-This is a separate service from Floorplan Studio. The existing n8n Cloud instance remains the research scheduler and holds the OpenAI credential.
+This is a separate service from Floorplan Studio. Hosting uses Render Free and Supabase Free, with no paid Render services or disks. The existing n8n Cloud instance remains the research scheduler and holds the OpenAI credential; their existing costs are separate from hosting.
 
 ## Deployment
 
-Create a Render Blueprint from `AITSCCTV/contentstudio`, using `render.yaml` on `main`. It creates one Node 24 Starter web service in Singapore with a 1 GB persistent disk mounted at `/var/data`. This is a paid service; review the price in Render before creating it. No Postgres or Cloudflare account is required for this single-instance deployment. SQLite records and JPEG images are stored on the disk. A disk limits the service to one instance and causes a short interruption during deploys. Monitor disk capacity as the library grows.
+Create a Render Blueprint from `AITSCCTV/contentstudio`, using `render.yaml` on `main`. It creates one Node 24 **Free** web service in Singapore, with no disk or managed database. Drafts and JPEG images are stored externally in Supabase Free. Render Free's local filesystem is temporary; hosted local SQLite mode is rejected. Keep both providers on their free plans and monitor their limits. Render Free can sleep after 15 minutes idle, so the next request may take about a minute to start. Free Supabase projects may pause after a week of inactivity. Render's free Postgres expires after 30 days and is not used.
 
-The Render build command is `corepack enable && pnpm install --frozen-lockfile && pnpm build:render`; the start command is `node dist-render/server/server.mjs`. The external origin is read from Render's `RENDER_EXTERNAL_URL`; set `PUBLIC_ORIGIN` instead when adding a custom domain, with no trailing slash. A missing or short secret leaves all application routes locked with HTTP 503; the health endpoint still reports liveness.
+The Render build command is `corepack enable && pnpm install --frozen-lockfile && pnpm build:render`; the start command is `node dist-render/server/server.mjs`. The external origin is read from Render's `RENDER_EXTERNAL_URL`; set `PUBLIC_ORIGIN` instead when adding a custom domain, with no trailing slash. The app can deploy without secrets but all application routes stay locked with HTTP 503 until access and external storage are configured. The health endpoint reports liveness and configuration presence, not an active connection test.
+
+## Free persistent storage
+
+Create a project in a **Supabase Free** organization. Create a **private** Storage bucket named `contentstudio-images` (or set `SUPABASE_STORAGE_BUCKET` to your bucket's name), allow JPEG files, and allow up to 8 MB per image. Enter the following privately in Render's Environment page:
+
+- `DATABASE_URL`: Supabase's **Session pooler** PostgreSQL URL (IPv4, port 5432), with the database password URL-encoded. The application creates its tables in the private `aits_contentstudio` schema, not the exposed `public` schema. It requires a database role that can create that schema. Do not add the private schema to the Data API's exposed schemas.
+- `DATABASE_CA_CERT`, if needed: the project database root CA from Supabase's connection settings. TLS certificate verification stays enabled; do not disable it to bypass connection errors.
+- `SUPABASE_URL`: the HTTPS project origin, e.g. `https://your-project.supabase.co`.
+- `SUPABASE_SERVICE_ROLE_KEY`: the backend-only Supabase service-role key. Never use it in the browser or GitHub Pages. Database and storage credentials remain server-only.
+
+Supabase Free currently includes 500 MB database storage and 1 GB file storage. These are quotas, not unlimited storage. No paid upgrade is configured or authorized. See the providers' current free-plan limits before changing plans.
 
 Enter these secrets directly in Render, never Git or chat:
 
@@ -34,6 +45,6 @@ The live dashboard and backend share one origin on Render. The GitHub Pages URL 
 
 ## Verification and operations
 
-Run `pnpm build:render`, `node test-render.mjs`, `node test-publishing.mjs`, `node test-post-route.mjs`, and `pnpm exec tsc --noEmit`. Integration tests use temporary storage and synthetic credentials, make no external API calls, and check persisted records/images across process restarts. Publishing tests use mocked platform responses.
+Run `pnpm build:render`, `node test-render.mjs`, `node test-supabase.mjs`, `node test-publishing.mjs`, `node test-post-route.mjs`, and `pnpm exec tsc --noEmit`. Local integration tests explicitly select `STORAGE_BACKEND=sqlite-local`, use temporary storage and synthetic credentials, and check persisted records/images across process restarts. PostgreSQL portability tests use embedded PostgreSQL and mocked Supabase HTTP responses. They do not claim a live Supabase connection test. Publishing tests use mocked platform responses.
 
-Back up both the database and images. For a consistent SQLite database copy, use Node's SQLite backup API from the Render Shell (`node scripts/backup-render.mjs`). Download the resulting database backup and image directory to company-controlled backup storage. A Render disk snapshot alone should not be treated as a verified database backup. Restore and live Meta/OpenAI access still require operational validation. All publishing remains disabled in the Blueprint.
+Back up the private Supabase schema with PostgreSQL tools and export the private bucket images to company-controlled storage. Free hosting should not be treated as a backup. The SQLite backup script is for local development only. Restore, live Supabase connectivity, and Meta/OpenAI access still require operational validation. All publishing remains disabled in the Blueprint.

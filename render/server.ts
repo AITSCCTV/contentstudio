@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {resolve,extname,sep} from 'node:path';
 import {identity,ready,validLogin,sessionCookie,clearCookie,authenticated} from './auth';
-import {db,bucket,json} from './store';
+import {db,bucket,json,storageConfigured} from './store';
 import * as drafts from '../app/api/drafts/route';
 import * as ingest from '../app/api/ingest/route';
 import * as post from '../app/api/post/route';
@@ -25,8 +25,8 @@ const redirect=(path:string,cookie?:string)=>new Response(null,{status:303,heade
 async function handle(req:IncomingMessage):Promise<Response>{
  const url=new URL(req.url||'/',origin),path=url.pathname,method=req.method||'GET';
  if(url.origin!==origin)return json({error:'Invalid origin'},400);
- if(path==='/healthz')return json({ok:true,configured:ready()});
- if(!ready())return json({error:'Administrator must configure STUDIO_USER, STUDIO_PASSWORD (24+ characters), and INGEST_TOKEN (32+ characters).'},503);
+ if(path==='/healthz')return json({ok:true,configured:ready()&&storageConfigured()});
+ if(!ready()||!storageConfigured())return json({error:'Setup required: configure team access, INGEST_TOKEN, and Supabase database/storage in Render.'},503);
  if(path==='/logout')return redirect('/login',clearCookie(secure));
  if(path==='/login'){
   if(method==='GET')return new Response(login,{headers:{'Content-Type':'text/html; charset=utf-8'}});

@@ -2,26 +2,17 @@ services:
   - type: web
     name: aits-contentstudio
     runtime: node
-    plan: starter
+    plan: free
     region: singapore
     buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build:render
     startCommand: node dist-render/server/server.mjs
     healthCheckPath: /healthz
-    disk:
-      name: contentstudio-data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: NODE_VERSION
         value: 24.13.0
-      - key: DATA_DIR
-        value: /var/data
       - key: STUDIO_USER
         value: aits-team
-      - key: STUDIO_PASSWORD
-        sync: false
-      - key: INGEST_TOKEN
-        sync: false
+      # Add secrets privately after deployment. App stays locked until configured.
       - key: POSTING_ENABLED
         value: false
       - key: MONITORING_ENABLED

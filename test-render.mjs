@@ -9,7 +9,7 @@ const probe=createServer();await new Promise(r=>probe.listen(0,'127.0.0.1',r));c
 const root=await mkdtemp(join(tmpdir(),'aits-render-test-')),origin=`http://127.0.0.1:${port}`;
 const password=randomBytes(24).toString('hex'),token=randomBytes(32).toString('hex');let child,logs='',checks=0;
 const check=(actual,expected)=>{assert.equal(actual,expected);checks++;};
-async function start(){child=spawn(process.execPath,['dist-render/server/server.mjs'],{env:{...process.env,PORT:String(port),PUBLIC_ORIGIN:origin,DATA_DIR:root,STUDIO_USER:'test-team',STUDIO_PASSWORD:password,INGEST_TOKEN:token,POSTING_ENABLED:'false'},stdio:['ignore','pipe','pipe']});child.stdout.on('data',d=>logs+=d);child.stderr.on('data',d=>logs+=d);for(let i=0;i<100;i++){if(child.exitCode!==null)throw new Error(logs);try{if((await fetch(origin+'/healthz')).ok)return;}catch{}await new Promise(r=>setTimeout(r,100));}throw new Error('Startup timed out: '+logs);}
+async function start(overrides={}){child=spawn(process.execPath,['dist-render/server/server.mjs'],{env:{...process.env,PORT:String(port),PUBLIC_ORIGIN:origin,STORAGE_BACKEND:'sqlite-local',DATA_DIR:root,STUDIO_USER:'test-team',STUDIO_PASSWORD:password,INGEST_TOKEN:token,POSTING_ENABLED:'false',...overrides},stdio:['ignore','pipe','pipe']});child.stdout.on('data',d=>logs+=d);child.stderr.on('data',d=>logs+=d);for(let i=0;i<100;i++){if(child.exitCode!==null)throw new Error(logs);try{if((await fetch(origin+'/healthz')).ok)return;}catch{}await new Promise(r=>setTimeout(r,100));}throw new Error('Startup timed out: '+logs);}
 async function stop(){if(child&&child.exitCode===null){const exited=new Promise(r=>child.once('exit',r));child.kill();await exited;}}
 const call=(path,options={})=>fetch(origin+path,{redirect:'manual',...options});
 try{
@@ -39,5 +39,8 @@ try{
  await stop();await start();
  const persisted=(await (await call('/api/drafts',{headers})).json()).drafts;check(persisted[0].revision,2);check(persisted[0].facebookCaption,edited.facebookCaption);check((await call(image,{headers})).status,200);
  const logout=await call('/logout',{headers});assert(logout.headers.get('set-cookie').includes('Max-Age=0'));checks++;
+ await stop();await start({STORAGE_BACKEND:'supabase',DATABASE_URL:'',SUPABASE_URL:'',SUPABASE_SERVICE_ROLE_KEY:''});
+ check((await (await call('/healthz')).json()).configured,false);check((await call('/')).status,503);
+ check((await call('/api/ingest',{method:'POST',headers:ingestHeaders,body:JSON.stringify(pack)})).status,503);
  console.log(`${checks} Render integration checks passed: auth, ingestion, revision conflicts, images, disabled posting, restart persistence. No external API calls.`);
 }finally{await stop();if(dirname(resolve(root))===resolve(tmpdir())&&root.includes('aits-render-test-'))await rm(root,{recursive:true,force:true});}
