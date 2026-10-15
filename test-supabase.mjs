@@ -2,6 +2,7 @@ import {PGlite} from '@electric-sql/pglite';
 import fs from 'node:fs';
 import ts from 'typescript';
 import assert from 'node:assert/strict';
+import {rootCertificates} from 'node:tls';
 const compile=path=>ts.transpileModule(fs.readFileSync(new URL(path,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
 const stripped=path=>compile(path).replace(/^import .*;\s*$/gm,'').replace(/^export /gm,'');
 const {postgresQuery}=new Function(stripped('./render/postgres-query.ts')+';return {postgresQuery};')();
@@ -11,7 +12,7 @@ const pg=new PGlite(),objects=new Map(),calls=[],env={DATABASE_URL:'postgresql:/
 let checks=0;const check=(a,b)=>{assert.equal(a,b);checks++;};
 const postgres=(url,options)=>{check(new URL(url).searchParams.has('sslmode'),false);check(options.ssl.rejectUnauthorized,true);return {async unsafe(sql,values=[]){const result=await pg.query(sql,values),rows=result.rows;rows.count=result.affectedRows??rows.length;return rows;}};};
 async function mockFetch(url,options){calls.push({url,options});check(options.headers.apikey,env.SUPABASE_SERVICE_ROLE_KEY);if(options.method==='POST'){objects.set(url.split('/').pop(),Buffer.from(options.body));return Response.json({ok:true});}assert(url.includes('/object/authenticated/'));checks++;const bytes=objects.get(url.split('/').pop());return bytes?new Response(bytes):new Response(null,{status:404});}
-const {db,bucket}=new Function('postgres','schema','postgresQuery','fetch','process',stripped('./render/supabase-store.ts')+';return {db,bucket};')(postgres,fs.readFileSync(new URL('./drizzle/0000_ancient_madame_hydra.sql',import.meta.url),'utf8'),postgresQuery,mockFetch,{env});
+const {db,bucket}=new Function('postgres','schema','postgresQuery','fetch','process','rootCertificates','supabaseCA',stripped('./render/supabase-store.ts')+';return {db,bucket};')(postgres,fs.readFileSync(new URL('./drizzle/0000_ancient_madame_hydra.sql',import.meta.url),'utf8'),postgresQuery,mockFetch,{env},rootCertificates,fs.readFileSync(new URL('./render/certs/supabase-prod-ca-2021.crt',import.meta.url),'utf8'));
 const json=(body,status=200)=>Response.json(body,{status});
 const makeRoute=(path,extra={})=>new Function('getChatGPTUser','db','bucket','json','settings','validateDraft','sameOrigin','publicationKey','graph','MetaError',stripped(path)+';return {GET:typeof GET==="function"?GET:null,POST:typeof POST==="function"?POST:null,PATCH:typeof PATCH==="function"?PATCH:null};')(async()=>({userId:'team'}),db,bucket,json,()=>env,validateDraft,()=>true,publicationKey,extra.graph,MetaError);
 const ingest=makeRoute('./app/api/ingest/route.ts'),drafts=makeRoute('./app/api/drafts/route.ts');

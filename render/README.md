@@ -13,7 +13,7 @@ The Render build command is `corepack enable && pnpm install --frozen-lockfile &
 Create a project in a **Supabase Free** organization. Create a **private** Storage bucket named `contentstudio-images` (or set `SUPABASE_STORAGE_BUCKET` to your bucket's name), allow JPEG files, and allow up to 8 MB per image. Enter the following privately in Render's Environment page:
 
 - `DATABASE_URL`: Supabase's **Session pooler** PostgreSQL URL (IPv4, port 5432), with the database password URL-encoded. The application creates its tables in the private `aits_contentstudio` schema, not the exposed `public` schema. It requires a database role that can create that schema. Do not add the private schema to the Data API's exposed schemas.
-- `DATABASE_CA_CERT`, if needed: the project database root CA from Supabase's connection settings. TLS certificate verification stays enabled; do not disable it to bypass connection errors.
+- `DATABASE_CA_CERT`, if needed: override the bundled Supabase Root 2021 CA with the project database root CA from Supabase's connection settings. The public certificate is sourced from Supabase's Database Settings → Download certificate link (`https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt`). System trust roots remain available and TLS certificate verification stays enabled; do not disable it to bypass connection errors.
 - `SUPABASE_URL`: the HTTPS project origin, e.g. `https://your-project.supabase.co`.
 - `SUPABASE_SERVICE_ROLE_KEY`: the backend-only Supabase service-role key. Never use it in the browser or GitHub Pages. Database and storage credentials remain server-only.
 

@@ -1,5 +1,7 @@
 import postgres from 'postgres';
 import schema from '../drizzle/0000_ancient_madame_hydra.sql?raw';
+import supabaseCA from './certs/supabase-prod-ca-2021.crt?raw';
+import {rootCertificates} from 'node:tls';
 import {postgresQuery} from './postgres-query';
 const e=process.env;
 export function configured(){return !!e.DATABASE_URL&&!!e.SUPABASE_URL&&!!e.SUPABASE_SERVICE_ROLE_KEY;}
@@ -9,7 +11,7 @@ async function connection(){
  if(!client){
   const url=new URL(e.DATABASE_URL!);if(!['postgres:','postgresql:'].includes(url.protocol))throw new Error('Invalid database URL');
   url.searchParams.delete('sslmode');url.searchParams.delete('ssl');url.searchParams.delete('sslrootcert');
-  client=postgres(url.toString(),{max:3,idle_timeout:20,connect_timeout:15,prepare:false,ssl:{rejectUnauthorized:true,...(e.DATABASE_CA_CERT?{ca:e.DATABASE_CA_CERT.replaceAll('\\n','\n')}:{})},onnotice:()=>{}});
+  client=postgres(url.toString(),{max:3,idle_timeout:20,connect_timeout:15,prepare:false,ssl:{rejectUnauthorized:true,ca:[...rootCertificates,e.DATABASE_CA_CERT?.replaceAll('\\n','\n')||supabaseCA]},onnotice:()=>{}});
  }
  if(!initializing){initializing=(async()=>{
   await client!.unsafe('CREATE SCHEMA IF NOT EXISTS aits_contentstudio');
