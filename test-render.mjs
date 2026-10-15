@@ -22,6 +22,7 @@ try{
  check((await call('/api/drafts',{headers:{cookie:cookie.slice(0,-3)+'bad'}})).status,401);
  const headers={cookie,origin,'content-type':'application/json'};
  check((await call('/',{headers})).status,200);
+ const logo=await call('/brand/logo.png',{headers});check(logo.status,200);check(logo.headers.get('content-type'),'image/png');check(Buffer.from(await logo.arrayBuffer()).subarray(0,8).toString('hex'),'89504e470d0a1a0a');
  const draft={id:'render_test_draft',title:'ระบบตรวจวัดอุณหภูมิ',facebookCaption:'เตรียมระบบตรวจวัดให้พร้อม',instagramCaption:'ปรึกษาระบบตรวจวัด',images:[],sources:[{url:'https://aitscctv.com/',title:'AITSCCTV'}],priority:'EVERGREEN',eventDate:new Date().toISOString(),expiresAt:null,audience:'เจ้าของอาคาร',solution:'ระบบตรวจวัด',checks:['ตรวจข้อมูล']};
  const ingestHeaders={authorization:'Bearer '+token,'content-type':'application/json'};
  const pack={draft,imageBase64:[Buffer.from([255,216,255,217]).toString('base64')]};

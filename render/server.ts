@@ -16,7 +16,7 @@ if(!origin||!/^https?:\/\/[^/]+$/.test(origin))throw new Error('PUBLIC_ORIGIN mu
 const secure=origin.startsWith('https:');
 if(!secure&&!/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin))throw new Error('HTTPS required');
 const client=resolve(fileURLToPath(new URL('../client/',import.meta.url)));
-const mime:Record<string,string>={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml'};
+const mime:Record<string,string>={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png'};
 const login=`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sign in · AITS Content Studio</title><style>body{font:16px system-ui;background:#eef4fa;color:#152d48;display:grid;place-items:center;min-height:95vh}main{background:white;padding:36px;border-radius:18px;width:min(340px,80vw)}input,button{display:block;box-sizing:border-box;width:100%;padding:12px;margin:10px 0 20px;border:1px solid #c5d4e3;border-radius:8px}button{background:#1264be;color:white;cursor:pointer}small{color:#52677c}</style><main><h1>AITS Content Studio</h1><p>Team sign in · เข้าสู่ระบบทีม</p><form method="post" action="/login"><label>Username<input name="username" autocomplete="username" required maxlength="100"></label><label>Password<input type="password" name="password" autocomplete="current-password" required maxlength="256"></label><button>Sign in / เข้าสู่ระบบ</button></form><small>Use the team access details provided by AITS.</small></main></html>`;
 const failures=new Map<string,{count:number;until:number}>();
 async function body(req:IncomingMessage,limit:number){let length=0;const chunks:Buffer[]=[];for await(const chunk of req){length+=chunk.length;if(length>limit)throw new Error('BODY_TOO_LARGE');chunks.push(Buffer.from(chunk));}return Buffer.concat(chunks);}
@@ -58,7 +58,7 @@ async function handle(req:IncomingMessage):Promise<Response>{
    const bytes=await body(req,1000000);const request=new Request(url,{method,headers:{'content-type':'application/json',origin:origin!},body:new Uint8Array(bytes)});return path==='/api/post'?post.POST(request):drafts.PATCH(request);
   }
   if(path.startsWith('/media/')&&method==='GET')return media.GET(new Request(url),{params:Promise.resolve({key:path.slice('/media/'.length)})});
-  if(method!=='GET'||(path!=='/'&&!path.startsWith('/assets/')))return json({},404);
+  if(method!=='GET'||(path!=='/'&&path!=='/brand/logo.png'&&!path.startsWith('/assets/')))return json({},404);
   const file=resolve(client,'.'+(path==='/'?'/index.html':decodeURIComponent(path)));if(!file.startsWith(client+sep))return json({},404);
   try{return new Response(await readFile(file),{headers:{'Content-Type':mime[extname(file)]||'application/octet-stream'}});}catch{return json({},404);}
  });
