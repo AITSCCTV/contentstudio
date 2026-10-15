@@ -10,7 +10,10 @@ async function connection(){
  if(!configured())throw new Error('Supabase storage is not configured');
  if(!client){
   const url=new URL(e.DATABASE_URL!);if(!['postgres:','postgresql:'].includes(url.protocol))throw new Error('Invalid database URL');
+  // A separate raw password avoids manual URI encoding when it contains @, #, %, etc.
+  if(e.DATABASE_PASSWORD)url.password=encodeURIComponent(e.DATABASE_PASSWORD);
   url.searchParams.delete('sslmode');url.searchParams.delete('ssl');url.searchParams.delete('sslrootcert');
+  console.info('AITS_DATABASE_TARGET',JSON.stringify({host:url.hostname,port:url.port||'5432',user:decodeURIComponent(url.username),database:url.pathname,passwordSource:e.DATABASE_PASSWORD?'DATABASE_PASSWORD':'DATABASE_URL'}));
   client=postgres(url.toString(),{max:3,idle_timeout:20,connect_timeout:15,prepare:false,ssl:{rejectUnauthorized:true,ca:[...rootCertificates,e.DATABASE_CA_CERT?.replaceAll('\\n','\n')||supabaseCA]},onnotice:()=>{}});
  }
  if(!initializing){initializing=(async()=>{
