@@ -16,6 +16,7 @@ try{
  await start();check((await call('/')).status,303);check((await call('/api/drafts')).status,401);
  check((await call('/api/drafts',{headers:{'oai-authenticated-user-id':'spoof','oai-authenticated-user-email':'spoof'}})).status,401);
  check((await call('/api/ingest',{method:'POST',body:'{}'})).status,401);
+ check((await call('/login')).headers.get('referrer-policy'),'same-origin');
  check((await call('/login',{method:'POST',body:new URLSearchParams({username:'test-team',password})})).status,403);
  const login=await call('/login',{method:'POST',headers:{origin},body:new URLSearchParams({username:'test-team',password})});check(login.status,303);const cookie=login.headers.get('set-cookie').split(';')[0];assert(login.headers.get('set-cookie').includes('HttpOnly'));checks++;
  check((await call('/api/drafts',{headers:{cookie:cookie.slice(0,-3)+'bad'}})).status,401);
