@@ -58,3 +58,5 @@ next-env.d.ts
 *.tsbuildinfo
 .dev.vars*
 /dist-pages/
+/dist-render/
+/render-data/

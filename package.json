@@ -13,6 +13,8 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "build:pages": "vite build --config vite.pages.config.ts",
+    "build:render": "node scripts/build-render.mjs",
+    "start:render": "node dist-render/server/server.mjs",
     "preview:pages": "vite preview --config vite.pages.config.ts --host 127.0.0.1 --port 5174"
   },
   "dependencies": {

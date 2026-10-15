@@ -42,6 +42,8 @@ Download the images outside Git, then use `node --import ./scripts/sites-env.mjs
 
 ## Hosted configuration
 
+For the company-controlled Render deployment, see [Render setup](render/README.md). It provides a Node server, persistent SQLite/JPEG storage, team sign-in, and the existing ingestion and publishing routes. Build with `pnpm build:render`. The Cloudflare prototype described below is retained separately and is not used by the Render build.
+
 The optional backend prototype requires server execution, D1 (`DB`), R2 (`BUCKET`), authentication and runtime secrets. GitHub Pages cannot run these server routes. The old personal hosting project registration has been removed; the remaining manifest declares logical storage bindings only.
 
 Hosted authentication currently relies on the Sites sign-in gateway. Deploying elsewhere requires a separate trusted authentication integration; do not expose the app directly with client-supplied identity headers.
